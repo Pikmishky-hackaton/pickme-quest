@@ -17,11 +17,13 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from users.views import GoogleLogin
+from users.views import GoogleLogin, UserProfile
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/registration/', include('dj_rest_auth.registration.urls')),
     path('auth/google/', GoogleLogin.as_view(), name='google_login'),
+    path('auth/user/profile', UserProfile.as_view(), name='user_profile')
 ]
