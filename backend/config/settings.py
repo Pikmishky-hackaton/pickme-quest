@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "default_secret_key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost"]
+ALLOWED_HOSTS = ["127.0.0.1","localhost"]
 
 # Application definition
 
@@ -153,6 +153,10 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 # 🔹 Налаштування dj-rest-auth
 REST_AUTH_REGISTER_SERIALIZERS = {
     "REGISTER_SERIALIZER": "dj_rest_auth.registration.serializers.RegisterSerializer",
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ]
 }
 
 # Internationalization
