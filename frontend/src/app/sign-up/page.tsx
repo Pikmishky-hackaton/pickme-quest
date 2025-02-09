@@ -1,6 +1,43 @@
+"use client";
 import Link from "next/link";
+import { useState } from "react";
+import GoogleLoginButton from "../components/google-login-button/GoogleLoginButton";
+import FormInput from "../components/form-input/formInput";
+
+interface RegistrationErrors {
+  general?: string;
+}
 
 export default function Registration() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<RegistrationErrors>({});
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const validationError = validateForm(
+      firstName,
+      lastName,
+      username,
+      email,
+      password,
+      confirmPassword
+    );
+
+    if (validationError) {
+      setErrors({ general: validationError });
+      return;
+    } else {
+      setErrors({});
+    }
+    // Send to backend
+  };
+
   return (
     <div className="bg-stone-300 dark:bg-gray-900">
       <div className="flex flex-col items-center justify-center h-screen mx-3 ">
@@ -8,43 +45,60 @@ export default function Registration() {
           <h2 className="text-3xl font-bold text-emerald-600 dark:text-white text-center mb-6">
             Sign Up
           </h2>
-          <form className="flex flex-col">
+          <form className="flex flex-col" onSubmit={handleSubmit}>
             <div className="flex space-x-3 mb-4">
-              <input
+              <FormInput
                 placeholder="First Name"
-                type="text"
-                className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white border-0 rounded-md p-2 w-1/2 focus:outline-none dark:placeholder-gray-300"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                styles="w-1/2"
               />
-              <input
+              <FormInput
                 placeholder="Last Name"
-                type="text"
-                className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white border-0 rounded-md p-2 w-1/2 focus:outline-none dark:placeholder-gray-300"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                styles="w-1/2"
               />
             </div>
-            <input
+            <FormInput
               placeholder="Username"
-              className="mb-4 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white border-0 rounded-md p-2 focus:outline-none dark:placeholder-gray-300"
-              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              styles="mb-4"
             />
-            <input
+            <FormInput
               placeholder="Email"
-              className="mb-4 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white border-0 rounded-md p-2 focus:outline-none dark:placeholder-gray-300"
-              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              styles="mb-4"
             />
-            <input
+            <FormInput
               placeholder="Password"
-              className="mb-4 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white border-0 rounded-md p-2 focus:outline-none dark:placeholder-gray-300"
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              styles="mb-4"
             />
-            <input
+            <FormInput
               placeholder="Confirm password"
-              className="mb-4 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white border-0 rounded-md p-2 focus:outline-none dark:placeholder-gray-300"
               type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              styles="mb-4"
             />
-            <button className="bg-emerald-600 dark:bg-blue-700 text-white font-medium py-2 px-4 rounded-md hover:bg-emerald-500 dark:hover:bg-blue-800 transition ease-in duration-200">
+            {errors.general && (
+              <p className="text-red-500 text-sm m-2 mt-0 text-center">
+                {errors.general}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="bg-emerald-600 dark:bg-blue-700 text-white font-medium py-2 px-4 rounded-md hover:bg-emerald-500 dark:hover:bg-blue-800 transition ease-in duration-200"
+            >
               Submit
             </button>
           </form>
+          <GoogleLoginButton />
           <p className="text-gray-800 dark:text-white mt-4 text-center">
             Already have an account?
             <Link href="/sign-in" className="underline mt-4 px-2">
@@ -55,4 +109,42 @@ export default function Registration() {
       </div>
     </div>
   );
+}
+
+function validateForm(
+  firstName: string,
+  lastName: string,
+  username: string,
+  email: string,
+  password: string,
+  confirmPassword: string
+) {
+  let validationError = "";
+  switch (true) {
+    case !firstName:
+      validationError = "First Name is required";
+      break;
+    case !lastName:
+      validationError = "Last Name is required";
+      break;
+    case !username:
+      validationError = "Username is required";
+      break;
+    case !email:
+      validationError = "Email is required";
+      break;
+    case !/\S+@\S+\.\S+/.test(email):
+      validationError = "Invalid email format";
+      break;
+    case !password:
+      validationError = "Password is required";
+      break;
+    case password.length < 6:
+      validationError = "Password must be at least 6 characters long";
+      break;
+    case password !== confirmPassword:
+      validationError = "Passwords do not match";
+      break;
+  }
+  return validationError;
 }
