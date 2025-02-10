@@ -8,7 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
-from .serializers import UserRegistrationSerializer, UserSerializer
+from .serializer import UserRegistrationSerializer
+from .models import User
 
 
 class GoogleLogin(SocialLoginView):
