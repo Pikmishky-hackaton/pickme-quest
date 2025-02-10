@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
-from .serializer import UserRegistrationSerializer
+from .serializers import UserRegistrationSerializer, UserSerializer
 
 
 class GoogleLogin(SocialLoginView):
@@ -38,35 +38,28 @@ def register_api(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_api(request):
-
-
-    username = request.data.get('username')
+    identifier = request.data.get('identifier')  # Може бути або email, або username
     password = request.data.get('password')
 
-    user = authenticate(request, username=username, password=password)
-    if user is not None:
-        login(request, user)
+    user = User.objects.filter(email=identifier).first() or User.objects.filter(username=identifier).first()
 
+    if user and user.check_password(password):
+        login(request, user)
         refresh = RefreshToken.for_user(user)
         return Response({
             'access': str(refresh.access_token),
             'refresh': str(refresh)
         }, status=status.HTTP_200_OK)
 
-    return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response({'error': 'Invalid username/email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_api(request):
-
     try:
-        refresh_token = request.COOKIES.get('refresh_token')
-        if refresh_token:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-
         logout(request)
+
         response = Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
         response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
@@ -78,7 +71,6 @@ def logout_api(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def is_authenticated(request):
-
     return Response({'authenticated': request.user.is_authenticated})
 
 
@@ -91,12 +83,11 @@ class UserProfile(APIView):
             "id": user.id,
             "email": user.email,
             "name": user.get_full_name(),
-            "avatar": user.avatar.url if user.avatar else None
+            "avatar": request.build_absolute_uri(user.avatar.url) if user.avatar else None
         })
 
 
 class CustomTokenRefreshView(APIView):
-
 
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get('refresh_token')
