@@ -21,18 +21,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased relative`}
       >
-        <Providers>
+         <div className="absolute inset-0 bg-[url('/light_background.jpg')] dark:bg-[url('/dark_background.jpg')] bg-cover bg-center blur-sm" />
+         <div className="relative z-10"><Providers>
           <Header />
           {children}
-        </Providers>
+        </Providers></div>
+         
       </body>
     </html>
   );
