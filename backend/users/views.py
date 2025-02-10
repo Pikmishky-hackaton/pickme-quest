@@ -24,7 +24,6 @@ class GoogleLogin(SocialLoginView):
 
         return response
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_api(request):
