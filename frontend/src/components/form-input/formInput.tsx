@@ -22,7 +22,6 @@ export default function FormInput({
 }: FormInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordField = type === "password";
-  console.log(error);
   return (
     <div className="w-full">
       <label

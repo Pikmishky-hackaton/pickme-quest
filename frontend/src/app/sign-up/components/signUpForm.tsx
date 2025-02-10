@@ -62,8 +62,12 @@ export default function Registration() {
       console.log("Registration successful:", response);
     } catch (err: unknown) {
       setIsLoading(false);
-
-      if (err instanceof AxiosError && err.response && err.response.data) {
+      if (
+        err instanceof AxiosError &&
+        err.response &&
+        err.response.data &&
+        typeof err.response.data === "object"
+      ) {
         setErrors(err.response.data as RegistrationErrors);
       } else {
         setErrors({
