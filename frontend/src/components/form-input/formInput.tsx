@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 interface FormInputProps {
+  name: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder: string;
@@ -12,6 +13,7 @@ interface FormInputProps {
 }
 
 export default function FormInput({
+  name,
   type = "text",
   value,
   onChange,
@@ -36,6 +38,7 @@ export default function FormInput({
         <input
           type={isPasswordField && showPassword ? "text" : type}
           value={value}
+          name={name}
           onChange={onChange}
           placeholder={placeholder}
           className={`bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white border-0 rounded-md p-1.5 md:p-2.5 focus:outline-none dark:placeholder-gray-300 w-full ${

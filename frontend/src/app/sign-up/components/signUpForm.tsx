@@ -1,62 +1,60 @@
 "use client";
 import Link from "next/link";
-import { useState, Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 import GoogleLoginButton from "@/components/google-login-button/GoogleLoginButton";
 import FormInput from "@/components/form-input/formInput";
-import axios, { AxiosError } from "axios";
-
-interface RegistrationErrors {
-  non_field_errors?: string;
-  username?: string;
-  email?: string;
-  password?: string;
-  password_confirm?: string;
-  first_name?: string;
-  last_name?: string;
-  date_of_birth?: string;
-}
+import { AxiosError } from "axios";
+import { validateForm } from "@/utils/form-validation/validation";
+import { RegistrationErrors } from "@/utils/form-validation/validation";
+import { registerUser } from "@/app/api/auth/[...nextauth]/auth";
 
 export default function Registration() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    dateOfBirth: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<RegistrationErrors>({});
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
-    const isErr = validateForm(
-      setErrors,
-      firstName,
-      lastName,
+
+    const {
       username,
       email,
       password,
-      confirmPassword
-    );
-    if (isErr) return;
+      confirmPassword,
+      firstName,
+      lastName,
+      dateOfBirth,
+    } = formData;
+
+    if (validateForm(setErrors, username, email, password, confirmPassword))
+      return;
+
     setIsLoading(true);
     setSuccessMessage("");
-
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/register/`,
-        {
-          username: username,
-          first_name: firstName || null,
-          last_name: lastName || null,
-          email: email,
-          date_of_birth: dateOfBirth || null,
-          password: password,
-          password_confirm: confirmPassword,
-        }
-      );
+      const response = await registerUser({
+        username: username,
+        first_name: firstName || null,
+        last_name: lastName || null,
+        email: email,
+        date_of_birth: dateOfBirth || null,
+        password: password,
+        password_confirm: confirmPassword,
+      });
       setIsLoading(false);
       setSuccessMessage(response.data.message || "Registration successful!");
       //redirect in the future
@@ -66,7 +64,7 @@ export default function Registration() {
       if (
         err instanceof AxiosError &&
         err.response &&
-        err.response.data &&
+        err.response?.data &&
         typeof err.response.data === "object"
       ) {
         setErrors(err.response.data as RegistrationErrors);
@@ -82,7 +80,7 @@ export default function Registration() {
     let formattedValue = e.target.value;
     const [year, month, day] = formattedValue.split("-");
     formattedValue = `${year}-${month}-${day}`;
-    setDateOfBirth(formattedValue);
+    setFormData({ ...formData, dateOfBirth: formattedValue });
   };
 
   return (
@@ -95,58 +93,65 @@ export default function Registration() {
           <form className="flex flex-col" onSubmit={handleSubmit}>
             <div className="flex space-x-3 mb-2 md:mb-4">
               <FormInput
+                name="firstName"
                 placeholder="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                value={formData.firstName}
+                onChange={handleChange}
                 styles="w-1/2"
                 error={errors.first_name}
               />
               <FormInput
+                name="lastName"
                 placeholder="Last Name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                value={formData.lastName}
+                onChange={handleChange}
                 styles="w-1/2"
                 error={errors.last_name}
               />
             </div>
             <FormInput
+              name="username"
               placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={formData.username}
+              onChange={handleChange}
               styles="mb-2 md:mb-4"
               error={errors.username}
               required={true}
             />
             <FormInput
+              name="email"
               placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
               styles="mb-2 md:mb-4"
               required={true}
               error={errors.email}
             />
             <FormInput
+              name="dateOfBirth"
               type="date"
-              value={dateOfBirth}
+              value={formData.dateOfBirth}
               placeholder="Date of Birth"
               onChange={handleDateChange}
               styles="mb-2 md:mb-4"
               error={errors.date_of_birth}
             />
             <FormInput
+              name="password"
               placeholder="Password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               styles="mb-2 md:mb-4"
               required={true}
               error={errors.password}
             />
             <FormInput
+              name="confirmPassword"
               placeholder="Confirm password"
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={formData.confirmPassword}
+              onChange={handleChange}
               styles="mb-2 md:mb-4"
               required={true}
               error={errors.password_confirm}
@@ -180,39 +185,4 @@ export default function Registration() {
       </div>
     </div>
   );
-}
-
-function validateForm(
-  setErrors: Dispatch<SetStateAction<RegistrationErrors>>,
-  firstName: string,
-  lastName: string,
-  username: string,
-  email: string,
-  password: string,
-  confirmPassword: string
-) {
-  let isError = false;
-  switch (true) {
-    case !username:
-      setErrors({ username: "Username is required" });
-      isError = true;
-      break;
-    case !email:
-      setErrors({ email: "Email is required" });
-      isError = true;
-      break;
-    case !/\S+@\S+\.\S+/.test(email):
-      setErrors({ email: "Invalid email format" });
-      isError = true;
-      break;
-    case !password:
-      setErrors({ password: "Password is required" });
-      isError = true;
-      break;
-    case password !== confirmPassword:
-      setErrors({ password_confirm: "Passwords do not match" });
-      isError = true;
-      break;
-  }
-  return isError;
 }
