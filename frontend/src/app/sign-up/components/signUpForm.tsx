@@ -3,105 +3,192 @@ import Link from "next/link";
 import { useState } from "react";
 import GoogleLoginButton from "@/components/google-login-button/GoogleLoginButton";
 import FormInput from "@/components/form-input/formInput";
-
-interface RegistrationErrors {
-  general?: string;
-}
+import axios, { AxiosError } from "axios";
+import { validateForm } from "@/utils/form-validation/validation";
+import { RegistrationErrors } from "@/utils/form-validation/validation";
 
 export default function Registration() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    dateOfBirth: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<RegistrationErrors>({});
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    const validationError = validateForm(
-      firstName,
-      lastName,
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrors({});
+
+    const {
       username,
       email,
       password,
-      confirmPassword
-    );
+      confirmPassword,
+      firstName,
+      lastName,
+      dateOfBirth,
+    } = formData;
 
-    if (validationError) {
-      setErrors({ general: validationError });
+    if (validateForm(setErrors, username, email, password, confirmPassword))
       return;
-    } else {
-      setErrors({});
+
+    setIsLoading(true);
+    setSuccessMessage("");
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register/`,
+        {
+          username: username,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          email: email,
+          date_of_birth: dateOfBirth || null,
+          password: password,
+          password_confirm: confirmPassword,
+        }
+      );
+
+      if (response.status === 201 || response.status === 200) {
+        try {
+          const loginResponse = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/login/`,
+            { username: formData.username, password: formData.password }
+          );
+
+          const { key } = loginResponse.data;
+
+          localStorage.setItem("authToken", key);
+          // redirect
+        } catch (loginErr) {
+          console.error("Login after registration failed:", loginErr);
+        }
+      }
+      setIsLoading(false);
+      setSuccessMessage(response.data.message || "Registration successful!");
+      //redirect in the future
+      console.log("Registration successful:", response);
+    } catch (err: unknown) {
+      setIsLoading(false);
+      if (
+        err instanceof AxiosError &&
+        err.response &&
+        err.response?.data &&
+        typeof err.response.data === "object"
+      ) {
+        setErrors(err.response.data as RegistrationErrors);
+      } else {
+        setErrors({
+          non_field_errors: "Registration failed. Please try again.",
+        });
+      }
     }
-    // Send to backend
   };
 
   return (
-    <div className="bg-stone-300 dark:bg-gray-900">
-      <div className="flex flex-col items-center justify-center h-screen mx-3 ">
+    <div className="bg-stone-300 dark:bg-gray-900 ">
+      <div className="flex flex-col items-center justify-center mx-3">
         <div className="w-full max-w-md md:max-w-lg lg:max-w-xl bg-gray-100 dark:bg-gray-800 rounded-xl shadow-lg py-8 px-8 md:py-10 md:px-10">
-          <h2 className="text-3xl font-bold text-emerald-700 dark:text-white text-center mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-emerald-700 dark:text-white text-center mb-3 md:mb-6">
             Sign Up
           </h2>
           <form className="flex flex-col" onSubmit={handleSubmit}>
-            <div className="flex space-x-3 mb-4">
+            <div className="flex space-x-3 mb-2 md:mb-4">
               <FormInput
+                name="firstName"
                 placeholder="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                value={formData.firstName}
+                onChange={handleChange}
                 styles="w-1/2"
+                error={errors.first_name}
               />
               <FormInput
+                name="lastName"
                 placeholder="Last Name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                value={formData.lastName}
+                onChange={handleChange}
                 styles="w-1/2"
+                error={errors.last_name}
               />
             </div>
             <FormInput
+              name="username"
               placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              styles="mb-4"
+              value={formData.username}
+              onChange={handleChange}
+              styles="mb-2 md:mb-4"
+              error={errors.username}
+              required={true}
             />
             <FormInput
+              name="email"
               placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              styles="mb-4"
+              value={formData.email}
+              onChange={handleChange}
+              styles="mb-2 md:mb-4"
+              required={true}
+              error={errors.email}
             />
             <FormInput
+              name="dateOfBirth"
+              type="date"
+              value={formData.dateOfBirth}
+              placeholder="Date of Birth"
+              onChange={handleChange}
+              styles="mb-2 md:mb-4"
+              error={errors.date_of_birth}
+            />
+            <FormInput
+              name="password"
               placeholder="Password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              styles="mb-4"
+              value={formData.password}
+              onChange={handleChange}
+              styles="mb-2 md:mb-4"
+              required={true}
+              error={errors.password}
             />
             <FormInput
+              name="confirmPassword"
               placeholder="Confirm password"
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              styles="mb-4"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              styles="mb-2 md:mb-4"
+              required={true}
+              error={errors.password_confirm}
             />
-            {errors.general && (
+            {errors.non_field_errors && (
               <p className="text-red-500 text-sm m-2 mt-0 text-center">
-                {errors.general}
+                {errors.non_field_errors}
+              </p>
+            )}
+            {successMessage && (
+              <p className="text-green-500 text-sm m-2 mt-0 text-center">
+                {successMessage}
               </p>
             )}
             <button
               type="submit"
-              className="bg-emerald-600 dark:bg-blue-700 text-white font-medium py-2 px-4 rounded-md hover:bg-emerald-500 dark:hover:bg-blue-800 transition ease-in duration-200"
+              className="mt-1 bg-emerald-600 dark:bg-blue-700 text-white text-sm md:text-md font-medium py-1.5 md:py-3 px-4 rounded-md hover:bg-emerald-500 dark:hover:bg-blue-800 transition ease-in duration-200"
+              disabled={isLoading}
             >
-              Submit
+              {isLoading ? "Signing Up..." : "Submit"}
             </button>
           </form>
           <GoogleLoginButton />
-          <p className="text-gray-800 dark:text-white mt-4 text-center">
+          <p className="text-gray-800 dark:text-white mt-2 md:mt-4 text-center">
             Already have an account?
-            <Link href="/sign-in" className="underline mt-4 px-2">
+            <Link href="/sign-in" className="underline mt-2 md:mt-4 px-2">
               Sign In
             </Link>
           </p>
@@ -109,42 +196,4 @@ export default function Registration() {
       </div>
     </div>
   );
-}
-
-function validateForm(
-  firstName: string,
-  lastName: string,
-  username: string,
-  email: string,
-  password: string,
-  confirmPassword: string
-) {
-  let validationError = "";
-  switch (true) {
-    case !firstName:
-      validationError = "First Name is required";
-      break;
-    case !lastName:
-      validationError = "Last Name is required";
-      break;
-    case !username:
-      validationError = "Username is required";
-      break;
-    case !email:
-      validationError = "Email is required";
-      break;
-    case !/\S+@\S+\.\S+/.test(email):
-      validationError = "Invalid email format";
-      break;
-    case !password:
-      validationError = "Password is required";
-      break;
-    case password.length < 6:
-      validationError = "Password must be at least 6 characters long";
-      break;
-    case password !== confirmPassword:
-      validationError = "Passwords do not match";
-      break;
-  }
-  return validationError;
 }
