@@ -46,7 +46,7 @@ export default function Registration() {
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API}/auth/register/`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register/`,
         {
           username: username,
           first_name: firstName || null,
@@ -59,6 +59,7 @@ export default function Registration() {
       );
       setIsLoading(false);
       setSuccessMessage(response.data.message || "Registration successful!");
+      //redirect in the future
       console.log("Registration successful:", response);
     } catch (err: unknown) {
       setIsLoading(false);
@@ -91,11 +92,6 @@ export default function Registration() {
           <h2 className="text-2xl md:text-3xl font-bold text-emerald-700 dark:text-white text-center mb-3 md:mb-6">
             Sign Up
           </h2>
-          {successMessage && (
-            <p className="text-green-500 text-sm m-2 mt-0 text-center">
-              {successMessage}
-            </p>
-          )}
           <form className="flex flex-col" onSubmit={handleSubmit}>
             <div className="flex space-x-3 mb-2 md:mb-4">
               <FormInput
@@ -158,6 +154,11 @@ export default function Registration() {
             {errors.non_field_errors && (
               <p className="text-red-500 text-sm m-2 mt-0 text-center">
                 {errors.non_field_errors}
+              </p>
+            )}
+            {successMessage && (
+              <p className="text-green-500 text-sm m-2 mt-0 text-center">
+                {successMessage}
               </p>
             )}
             <button
