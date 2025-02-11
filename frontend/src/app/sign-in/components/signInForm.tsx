@@ -27,14 +27,16 @@ export default function Login() {
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/login/`,
-        { identifier: identifier, password: password }
+        {
+          username: identifier,
+          password: password,
+        }
       );
       setIsLoading(false);
 
-      const { access, refresh } = response.data;
+      const { key } = response.data;
 
-      localStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
+      localStorage.setItem("authToken", key);
       //redirect
     } catch (err) {
       setIsLoading(false);
@@ -52,10 +54,10 @@ export default function Login() {
   };
 
   return (
-    <div className="bg-stone-300 dark:bg-gray-900">
-      <div className="flex flex-col items-center justify-center h-screen mx-3 ">
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl bg-gray-100 dark:bg-gray-800 rounded-xl shadow-lg py-8 px-8 md:py-10 md:px-10">
-          <h2 className="text-3xl font-bold text-emerald-600 dark:text-white text-center mb-6">
+    <div className="w-full bg-stone-300 dark:bg-gray-900">
+      <div className="flex flex-col items-center justify-center mx-3 ">
+        <div className="w-full max-w-md md:max-w-lg bg-gray-100 dark:bg-gray-800 rounded-xl shadow-lg py-8 px-8 md:py-10 md:px-10">
+          <h2 className="text-3xl font-bold text-emerald-600 dark:text-white text-center mb-3 md:mb-5">
             Sign In
           </h2>
           <form className="flex flex-col" onSubmit={handleSubmit}>
@@ -81,7 +83,7 @@ export default function Login() {
                 {error}
               </p>
             )}
-            <button className="bg-emerald-600 dark:bg-blue-700 text-white font-medium py-2 px-4 rounded-md hover:bg-emerald-500 dark:hover:bg-blue-800 transition ease-in duration-200">
+            <button className="mt-2 text-md bg-emerald-600 dark:bg-blue-700 text-white md:text-md font-medium py-1.5 md:py-2.5 px-4 rounded-md hover:bg-emerald-500 dark:hover:bg-blue-800 transition ease-in duration-200">
               {isLoading ? "Logging In..." : "Login"}
             </button>
           </form>

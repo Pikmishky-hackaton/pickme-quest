@@ -3,10 +3,9 @@ import Link from "next/link";
 import { useState } from "react";
 import GoogleLoginButton from "@/components/google-login-button/GoogleLoginButton";
 import FormInput from "@/components/form-input/formInput";
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import { validateForm } from "@/utils/form-validation/validation";
 import { RegistrationErrors } from "@/utils/form-validation/validation";
-import { registerUser } from "@/app/api/auth/[...nextauth]/auth";
 
 export default function Registration() {
   const [formData, setFormData] = useState({
@@ -46,15 +45,34 @@ export default function Registration() {
     setIsLoading(true);
     setSuccessMessage("");
     try {
-      const response = await registerUser({
-        username: username,
-        first_name: firstName || null,
-        last_name: lastName || null,
-        email: email,
-        date_of_birth: dateOfBirth || null,
-        password: password,
-        password_confirm: confirmPassword,
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register/`,
+        {
+          username: username,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          email: email,
+          date_of_birth: dateOfBirth || null,
+          password: password,
+          password_confirm: confirmPassword,
+        }
+      );
+
+      if (response.status === 201 || response.status === 200) {
+        try {
+          const loginResponse = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/login/`,
+            { username: formData.username, password: formData.password }
+          );
+
+          const { key } = loginResponse.data;
+
+          localStorage.setItem("authToken", key);
+          // redirect
+        } catch (loginErr) {
+          console.error("Login after registration failed:", loginErr);
+        }
+      }
       setIsLoading(false);
       setSuccessMessage(response.data.message || "Registration successful!");
       //redirect in the future
@@ -78,7 +96,7 @@ export default function Registration() {
 
   return (
     <div className="bg-stone-300 dark:bg-gray-900 ">
-      <div className="flex flex-col items-center justify-center mx-3 my-5 md:my-8">
+      <div className="flex flex-col items-center justify-center mx-3">
         <div className="w-full max-w-md md:max-w-lg lg:max-w-xl bg-gray-100 dark:bg-gray-800 rounded-xl shadow-lg py-8 px-8 md:py-10 md:px-10">
           <h2 className="text-2xl md:text-3xl font-bold text-emerald-700 dark:text-white text-center mb-3 md:mb-6">
             Sign Up
