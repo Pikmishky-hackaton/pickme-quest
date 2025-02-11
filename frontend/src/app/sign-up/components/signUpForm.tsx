@@ -76,13 +76,6 @@ export default function Registration() {
     }
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let formattedValue = e.target.value;
-    const [year, month, day] = formattedValue.split("-");
-    formattedValue = `${year}-${month}-${day}`;
-    setFormData({ ...formData, dateOfBirth: formattedValue });
-  };
-
   return (
     <div className="bg-stone-300 dark:bg-gray-900 ">
       <div className="flex flex-col items-center justify-center mx-3 my-5 md:my-8">
@@ -132,7 +125,7 @@ export default function Registration() {
               type="date"
               value={formData.dateOfBirth}
               placeholder="Date of Birth"
-              onChange={handleDateChange}
+              onChange={handleChange}
               styles="mb-2 md:mb-4"
               error={errors.date_of_birth}
             />
