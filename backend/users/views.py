@@ -42,18 +42,24 @@ def login_api(request):
     identifier = request.data.get('identifier')  # Може бути або email, або username
     password = request.data.get('password')
 
+    # Перевіряємо, чи існує користувач з таким email або username
     user = User.objects.filter(email=identifier).first() or User.objects.filter(username=identifier).first()
 
-    if user and user.check_password(password):
-        login(request, user)
-        refresh = RefreshToken.for_user(user)
+    if not user:
+        return Response({'error': 'User with this email/username does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Використовуємо authenticate для перевірки пароля
+    authenticated_user = authenticate(request, username=user.username, password=password)
+
+    if authenticated_user:
+        login(request, authenticated_user)
+        refresh = RefreshToken.for_user(authenticated_user)
         return Response({
             'access': str(refresh.access_token),
             'refresh': str(refresh)
         }, status=status.HTTP_200_OK)
-
-    return Response({'error': 'Invalid username/email or password'}, status=status.HTTP_401_UNAUTHORIZED)
-
+    else:
+        return Response({'error': 'Invalid password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
