@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-
+from django.core.validators import FileExtensionValidator
+from django.utils.text import slugify
 User = get_user_model()
 
 class Quest(models.Model):
@@ -10,6 +11,16 @@ class Quest(models.Model):
     task_count = models.PositiveIntegerField()
     time_limit = models.DurationField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    slug = models.SlugField(max_length=255, unique=True, default='quest')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(f'{self.title}')
+        super().save(*args, **kwargs)
+
 
 class Task(models.Model):
     quest = models.ForeignKey(Quest, on_delete=models.CASCADE, related_name='tasks')
@@ -24,11 +35,26 @@ class Task(models.Model):
     )
     correct_answer = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    slug = models.SlugField(max_length=255, unique=True, default='task')
+
+    def __str__(self):
+        return self.question
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(f'{self.question}')
+        super().save(*args, **kwargs)
 
 class Media(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='media')
     media_type = models.CharField(
         max_length=10,
-        choices=[('text', 'Текст'), ('image', 'Фото'), ('video', 'Відео')]
+        choices=[('text', 'Text'), ('image', 'Image'), ('video', 'Video')]
     )
-    content = models.TextField()
+    content = models.TextField(blank=True, null=True)
+    file = models.FileField(
+        upload_to='media/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'png', 'mp4', 'avi'])]
+    )

@@ -1,32 +1,38 @@
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth import authenticate, login, logout
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import viewsets, permissions, generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from dj_rest_auth.registration.views import SocialLoginView
-from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from .models import Quest, Task, Media
 from .serializer import QuestSerializer, TaskSerializer, MediaSerializer
 
-class QuestViewSet(viewsets.ModelViewSet):
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.user == request.user
+
+
+class QuestListCreateView(generics.ListCreateAPIView):
     queryset = Quest.objects.all()
     serializer_class = QuestSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
+class QuestDetailView(generics.RetrieveAPIView):
+    queryset = Quest.objects.all()
+    serializer_class = QuestSerializer
+    permission_classes = [IsOwnerOrReadOnly]
+    lookup_field = 'slug'
 
-class TaskViewSet(viewsets.ModelViewSet):
+class TaskListCreateView(generics.ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
-class MediaViewSet(viewsets.ModelViewSet):
+class TaskDetailView(generics.RetrieveAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsOwnerOrReadOnly]
+    lookup_field = 'slug'
+
+class MediaUploadView(generics.CreateAPIView):
     queryset = Media.objects.all()
     serializer_class = MediaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
